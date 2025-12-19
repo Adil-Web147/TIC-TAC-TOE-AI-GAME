@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Square from './components/Square';
-import CyberNarrator from './components/CyberNarrator';
-
 import { calculateWinner, getBestMove } from './services/minimax';
 import { getNarratorCommentary } from './services/geminiService';
 import { playXSound, playOSound, playWinSound, playLossSound, playDrawSound } from './services/audioService';
@@ -17,7 +15,7 @@ const App: React.FC = () => {
   const [userName, setUserName] = useState<string>("ADIL");
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
   const [vitals, setVitals] = useState(100);
-  const [narratorMsg, setNarratorMsg] = useState<NarratorMessage>({
+  const [setNarratorMsg] = useState<NarratorMessage>({
     text: "Hi! I'm your AI bestie. Ready to play?",
     sender: 'AI'
   });
