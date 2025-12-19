@@ -1,8 +1,7 @@
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Square from './components/Square';
+import CyberNarrator from './components/CyberNarrator';
 import { calculateWinner, getBestMove } from './services/minimax';
 import { getNarratorCommentary } from './services/geminiService';
 import { playXSound, playOSound, playWinSound, playLossSound, playDrawSound } from './services/audioService';
@@ -17,7 +16,7 @@ const App: React.FC = () => {
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
   const [vitals, setVitals] = useState(100);
   
-  // FIX: Destructure both the state value and the setter correctly
+  // FIXED: Correct state destructuring
   const [narratorMsg, setNarratorMsg] = useState<NarratorMessage>({
     text: "Hi! I'm your AI bestie. Ready to play?",
     sender: 'AI'
@@ -36,7 +35,7 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // FIX: Added setNarratorMsg to dependency array
+  // FIXED: Added setNarratorMsg to dependency array
   const updateNarrator = useCallback(async (currentBoard: Player[], moveIdx: number, hasWinner: boolean, winnerSymbol: Player) => {
     const boardStr = currentBoard.map(s => s || '-').join('');
     const comment = await getNarratorCommentary(boardStr, moveIdx, hasWinner, winnerSymbol === 'X' ? userName : 'Bestie');
@@ -173,9 +172,9 @@ const App: React.FC = () => {
         </div>
 
         {/* Chat Area */}
-        {/* <div className="w-full animate-slide-up stagger-3">
+        <div className="w-full animate-slide-up stagger-3">
           <CyberNarrator message={narratorMsg} isThinking={isAiThinking} />
-        </div> */}
+        </div>
       </main>
 
       {/* Result Layer */}
@@ -221,9 +220,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <footer className="w-full py-3 text-slate-200 text-[9px] font-orbitron tracking-[0.5em] pointer-events-none uppercase text-center opacity-40">
-        Best Friend AI System
-      </footer>
+      
     </div>
   );
 };
