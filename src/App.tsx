@@ -1,6 +1,7 @@
+
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Square from './components/Square';
 import { calculateWinner, getBestMove } from './services/minimax';
 import { getNarratorCommentary } from './services/geminiService';
@@ -15,13 +16,18 @@ const App: React.FC = () => {
   const [userName, setUserName] = useState<string>("ADIL");
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
   const [vitals, setVitals] = useState(100);
-  const [setNarratorMsg] = useState<NarratorMessage>({
+  
+  // FIX: Destructure both the state value and the setter correctly
+  const [narratorMsg, setNarratorMsg] = useState<NarratorMessage>({
     text: "Hi! I'm your AI bestie. Ready to play?",
     sender: 'AI'
   });
 
   const { winner, line: winningLine } = calculateWinner(board);
   const isGameOver = !!winner || board.every(s => s !== null);
+  
+  // Ref to prevent multiple score updates in one game
+  const scoreProcessedRef = useRef(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -30,31 +36,40 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // FIX: Added setNarratorMsg to dependency array
   const updateNarrator = useCallback(async (currentBoard: Player[], moveIdx: number, hasWinner: boolean, winnerSymbol: Player) => {
     const boardStr = currentBoard.map(s => s || '-').join('');
     const comment = await getNarratorCommentary(boardStr, moveIdx, hasWinner, winnerSymbol === 'X' ? userName : 'Bestie');
     setNarratorMsg({ text: comment, sender: 'AI' });
-  }, [userName]);
+  }, [userName, setNarratorMsg]);
 
   useEffect(() => {
-    if (isGameOver) {
-      if (winner === 'X') {
-        setScores(s => ({ ...s, X: s.X + 1 }));
-        playWinSound(userName);
-      } else if (winner === 'O') {
-        setScores(s => ({ ...s, O: s.O + 1 }));
-        playLossSound();
-      } else {
-        setScores(s => ({ ...s, Draws: s.Draws + 1 }));
-        playDrawSound();
-      }
+    if (isGameOver && !scoreProcessedRef.current) {
+      scoreProcessedRef.current = true;
+      // FIX: Wrap in setTimeout to avoid synchronous setState in effect
+      setTimeout(() => {
+        if (winner === 'X') {
+          setScores(s => ({ ...s, X: s.X + 1 }));
+          playWinSound(userName);
+        } else if (winner === 'O') {
+          setScores(s => ({ ...s, O: s.O + 1 }));
+          playLossSound();
+        } else {
+          setScores(s => ({ ...s, Draws: s.Draws + 1 }));
+          playDrawSound();
+        }
+      }, 0);
     }
   }, [isGameOver, winner, userName]);
 
   useEffect(() => {
     if (!isXNext && !isGameOver) {
-      setIsAiThinking(true);
-      const timer = setTimeout(() => {
+      // FIX: Wrap in setTimeout to avoid synchronous setState in effect
+      const thinkTimer = setTimeout(() => {
+        setIsAiThinking(true);
+      }, 0);
+
+      const aiTimer = setTimeout(() => {
         const bestMove = getBestMove([...board]);
         const newBoard = [...board];
         newBoard[bestMove] = 'O';
@@ -65,7 +80,10 @@ const App: React.FC = () => {
         const { winner: moveWinner } = calculateWinner(newBoard);
         updateNarrator(newBoard, bestMove, !!moveWinner, moveWinner);
       }, 700);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(thinkTimer);
+        clearTimeout(aiTimer);
+      };
     }
   }, [isXNext, isGameOver, board, updateNarrator]);
 
@@ -80,13 +98,14 @@ const App: React.FC = () => {
 
   const resetGame = () => {
     playXSound();
+    scoreProcessedRef.current = false;
     setBoard(Array(9).fill(null));
     setIsXNext(true);
     setNarratorMsg({ text: "Let's play again! I'll try my best.", sender: 'AI' });
   };
 
   return (
-    <div className="h-full w-full flex flex-col items-center justify-between p-0 m-0 overflow-hidden relative bg-[#02040a]">
+    <div className="h-full w-full flex flex-col items-center justify-between p-0 m-0 overflow-hidden relative bg-[#02040a] min-h-screen">
       
       {/* Gorgeous Navbar */}
       <nav className="w-full px-6 py-2 flex justify-between items-center navbar-glass z-[100]">
